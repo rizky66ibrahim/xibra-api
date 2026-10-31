@@ -21,12 +21,13 @@ class WorkShift extends Model
     ];
 
     protected $casts = [
-        'start_time' => 'time',
-        'end_time' => 'time',
+        'start_time'  => 'string',
+        'end_time'    => 'string',
         'break_minutes' => 'integer',
-        'work_date' => 'date',
-        'is_active' => 'boolean',
+        'work_date'   => 'date',
+        'is_active'   => 'boolean',
     ];
+
 
     public function user()
     {
