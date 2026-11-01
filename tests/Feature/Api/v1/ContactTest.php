@@ -51,7 +51,7 @@ class ContactTest extends TestCase
 
     public function test_authenticated_user_can_list_contacts(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs($this->adminUser());
         Contact::factory()->count(3)->create();
 
         $this->getJson('/api/v1/contacts')
@@ -61,7 +61,7 @@ class ContactTest extends TestCase
 
     public function test_authenticated_user_can_update_and_delete_contact(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs($this->adminUser());
         $contact = Contact::factory()->create();
 
         $this->putJson("/api/v1/contacts/{$contact->id}", ['status' => 'read'])
@@ -73,5 +73,32 @@ class ContactTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseMissing('contacts', ['id' => $contact->id]);
+    }
+
+    private function adminUser(): User
+    {
+        $admin = User::factory()->create();
+        $admin->forceFill(['role' => 'admin'])->save();
+
+        return $admin;
+    }
+
+    public function test_non_admin_user_cannot_list_contacts(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        Contact::factory()->count(2)->create();
+
+        $this->getJson('/api/v1/contacts')->assertForbidden();
+    }
+
+    public function test_non_admin_user_cannot_update_or_delete_contact(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        $contact = Contact::factory()->create();
+
+        $this->putJson("/api/v1/contacts/{$contact->id}", ['status' => 'read'])->assertForbidden();
+        $this->deleteJson("/api/v1/contacts/{$contact->id}")->assertForbidden();
+
+        $this->assertDatabaseHas('contacts', ['id' => $contact->id, 'status' => $contact->status]);
     }
 }
