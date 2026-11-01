@@ -4,8 +4,8 @@ namespace Tests\Feature\Api\v1;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
@@ -105,7 +105,7 @@ class AuthTest extends TestCase
 
         $token = $user->createToken('test_token')->plainTextToken;
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/auth/logout');
 
         $response->assertStatus(200)
@@ -121,7 +121,7 @@ class AuthTest extends TestCase
 
         $token = $user->createToken('test_token')->plainTextToken;
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/v1/auth/user');
 
         $response->assertStatus(200)
