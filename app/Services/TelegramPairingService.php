@@ -5,13 +5,15 @@ namespace App\Services;
 use App\Models\TelegramAccount;
 use App\Models\TelegramPairingCode;
 use App\Models\User;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class TelegramPairingService
 {
     private int $codeLength = 8;
+
     private int $expiresInMinutes = 5;
 
     public function generatePairingCode(User $user): array
@@ -23,7 +25,7 @@ class TelegramPairingService
             ->update(['consumed_at' => now()]);
 
         // Generate secure random code: XIBRA-XXXX-XXXX
-        $rawCode = 'XIBRA-' . Str::upper(Str::random(4)) . '-' . Str::upper(Str::random(4));
+        $rawCode = 'XIBRA-'.Str::upper(Str::random(4)).'-'.Str::upper(Str::random(4));
         $codeHash = Hash::make($rawCode);
 
         $pairingCode = TelegramPairingCode::create([
@@ -46,103 +48,98 @@ class TelegramPairingService
 
     public function verifyPairingCode(string $rawCode, int $telegramUserId, string $telegramUsername): array
     {
-        // Find all unexpired codes
-        $codes = TelegramPairingCode::where('expires_at', '>', now())
-            ->whereNull('consumed_at')
-            ->get();
+        return DB::transaction(function () use ($rawCode, $telegramUserId, $telegramUsername) {
+            // Find all unexpired codes
+            $codes = TelegramPairingCode::where('expires_at', '>', now())
+                ->whereNull('consumed_at')
+                ->lockForUpdate()
+                ->get();
 
-        $matchedCode = null;
+            $matchedCode = $codes->first(fn ($code) => Hash::check($rawCode, $code->code_hash));
 
-        foreach ($codes as $code) {
-            if (Hash::check($rawCode, $code->code_hash)) {
-                $matchedCode = $code;
-                break;
+            if (! $matchedCode) {
+                Log::warning('Invalid pairing code attempted', [
+                    'telegram_user_id' => $telegramUserId,
+                ]);
+
+                return ['success' => false, 'error' => 'Invalid or expired pairing code.'];
             }
-        }
 
-        if (!$matchedCode) {
-            Log::warning('Invalid pairing code attempted', [
-                'telegram_user_id' => $telegramUserId,
-            ]);
+            // Check if the code is expired
+            $user = $matchedCode->user;
 
-            return [
-                'success' => false,
-                'error' => 'Invalid or expired pairing code.',
-            ];
-        }
+            if (! $user || $user->trashed() || ! $user->is_active) {
+                return ['success' => false, 'error' => 'Invalid or expired pairing code.'];
+            }
+            // Check if Telegram already linked to another user
+            $existingTelegram = TelegramAccount::where('telegram_user_id', $telegramUserId)
+                ->where('is_active', true)
+                ->first();
 
-        // Mark as consumed
-        $matchedCode->consumed_at = now();
-        $matchedCode->save();
+            if ($existingTelegram && $existingTelegram->user_id !== $user->id) {
+                Log::warning('Telegram already linked to another user', [
+                    'telegram_user_id' => $telegramUserId,
+                    'existing_user_id' => $existingTelegram->user_id,
+                    'requested_user_id' => $user->id,
+                ]);
 
-        $user = $matchedCode->user;
+                return [
+                    'success' => false,
+                    'error' => 'Telegram account is already linked to another Xibra account.',
+                ];
+            }
 
-        // Check if Telegram already linked to another user
-        $existingTelegram = TelegramAccount::where('telegram_user_id', $telegramUserId)
-            ->where('is_active', true)
-            ->first();
+            $matchedCode->forceFill(['consumed_at' => now()])->save();
 
-        if ($existingTelegram && $existingTelegram->user_id !== $user->id) {
-            Log::warning('Telegram already linked to another user', [
-                'telegram_user_id' => $telegramUserId,
-                'existing_user_id' => $existingTelegram->user_id,
-                'requested_user_id' => $user->id,
-            ]);
+            // Check if user already has active Telegram
+            $existingUserTelegram = TelegramAccount::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->first();
 
-            return [
-                'success' => false,
-                'error' => 'Telegram account is already linked to another Xibra account.',
-            ];
-        }
+            if ($existingUserTelegram) {
+                // Update existing
+                $existingUserTelegram->update([
+                    'telegram_user_id' => $telegramUserId,
+                    'telegram_username' => $telegramUsername,
+                    'linked_at' => now(),
+                    'is_active' => true,
+                ]);
 
-        // Check if user already has active Telegram
-        $existingUserTelegram = TelegramAccount::where('user_id', $user->id)
-            ->where('is_active', true)
-            ->first();
+                Log::info('Telegram account relinked', [
+                    'user_id' => $user->id,
+                    'telegram_user_id' => $telegramUserId,
+                ]);
 
-        if ($existingUserTelegram) {
-            // Update existing
-            $existingUserTelegram->update([
+                return [
+                    'success' => true,
+                    'user' => $user,
+                    'telegram_account' => $existingUserTelegram,
+                    'message' => 'Telegram account relinked successfully.',
+                ];
+            }
+
+            // Create new link
+            $telegramAccount = TelegramAccount::create([
+                'user_id' => $user->id,
                 'telegram_user_id' => $telegramUserId,
                 'telegram_username' => $telegramUsername,
                 'linked_at' => now(),
                 'is_active' => true,
             ]);
 
-            Log::info('Telegram account relinked', [
+            Log::info('Telegram account linked', [
                 'user_id' => $user->id,
                 'telegram_user_id' => $telegramUserId,
+                'telegram_username' => $telegramUsername,
             ]);
 
             return [
                 'success' => true,
                 'user' => $user,
-                'telegram_account' => $existingUserTelegram,
-                'message' => 'Telegram account relinked successfully.',
+                'telegram_account' => $telegramAccount,
+                'message' => 'Telegram account linked successfully.',
             ];
-        }
-
-        // Create new link
-        $telegramAccount = TelegramAccount::create([
-            'user_id' => $user->id,
-            'telegram_user_id' => $telegramUserId,
-            'telegram_username' => $telegramUsername,
-            'linked_at' => now(),
-            'is_active' => true,
-        ]);
-
-        Log::info('Telegram account linked', [
-            'user_id' => $user->id,
-            'telegram_user_id' => $telegramUserId,
-            'telegram_username' => $telegramUsername,
-        ]);
-
-        return [
-            'success' => true,
-            'user' => $user,
-            'telegram_account' => $telegramAccount,
-            'message' => 'Telegram account linked successfully.',
-        ];
+        });
     }
 
     public function getPairingStatus(User $user): array
@@ -171,7 +168,7 @@ class TelegramPairingService
             ->where('is_active', true)
             ->first();
 
-        if (!$telegramAccount) {
+        if (! $telegramAccount) {
             return false;
         }
 

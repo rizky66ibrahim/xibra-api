@@ -233,12 +233,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->middleware('throttle:5,1')
         ->name('contacts.store');
 
-    // Telegram Integration (Public)
-    Route::prefix('integrations/telegram')
-        ->name('integrations.telegram.')
+    // Telegram Pairing Integration (Bot Internal)
+    Route::prefix('integrations/telegram')->name('integrations.telegram.')->group(function () {
+        Route::post('/pair', [TelegramPairingIntegrationController::class, 'pair'])->name('pair');
+    });
+
+    // Bot Telegram: autentikasi dengan header X-Telegram-Bot-Secret, bukan token user
+    Route::post('/integrations/telegram/pair', [TelegramPairingIntegrationController::class, 'pair'])
         ->middleware('throttle:10,1')
-        ->group(function () {
-            Route::post('/pair', [TelegramPairingIntegrationController::class, 'pair'])
-                ->name('pair');
-        });
+        ->name('integrations.telegram.pair');
 });
