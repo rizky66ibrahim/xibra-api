@@ -210,4 +210,23 @@ class AuthTest extends TestCase
             'password' => 'wrong-password',
         ])->assertStatus(429);
     }
+
+    public function test_register_cannot_set_admin_role(): void
+    {
+        $this->postJson('/api/v1/auth/register', [
+            'name' => 'Attacker',
+            'username' => 'attacker',
+            'email' => 'attacker@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'admin',
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('users', ['username' => 'attacker', 'role' => 'user']);
+    }
+
+    public function test_sanctum_token_expires_in_one_year(): void
+    {
+        $this->assertSame(60 * 24 * 365, config('sanctum.expiration'));
+    }
 }
