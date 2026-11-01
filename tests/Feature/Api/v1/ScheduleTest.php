@@ -36,16 +36,16 @@ class ScheduleTest extends TestCase
 
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/schedules', [
-                'title'      => 'Weekly Meeting',
+                'title' => 'Weekly Meeting',
                 'start_time' => '2026-10-28T14:00:00',
-                'end_time'   => '2026-10-28T15:30:00',
+                'end_time' => '2026-10-28T15:30:00',
             ]);
 
         $response->assertStatus(201)
             ->assertJson(['success' => true]);
 
         $this->assertDatabaseHas('schedules', [
-            'title'   => 'Weekly Meeting',
+            'title' => 'Weekly Meeting',
             'user_id' => $user->id,
         ]);
     }
@@ -60,7 +60,7 @@ class ScheduleTest extends TestCase
         $schedule = Schedule::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user, 'sanctum')
-            ->getJson('/api/v1/schedules/' . $schedule->id);
+            ->getJson('/api/v1/schedules/'.$schedule->id);
 
         $response->assertStatus(200)
             ->assertJson(['success' => true])
@@ -82,7 +82,7 @@ class ScheduleTest extends TestCase
         $schedule = Schedule::factory()->create(['user_id' => $owner->id]);
 
         $response = $this->actingAs($attacker, 'sanctum')
-            ->getJson('/api/v1/schedules/' . $schedule->id);
+            ->getJson('/api/v1/schedules/'.$schedule->id);
 
         $response->assertStatus(403);
     }
@@ -97,7 +97,7 @@ class ScheduleTest extends TestCase
         $schedule = Schedule::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user, 'sanctum')
-            ->putJson('/api/v1/schedules/' . $schedule->id, [
+            ->putJson('/api/v1/schedules/'.$schedule->id, [
                 'title' => 'Updated Meeting',
             ]);
 
@@ -105,7 +105,7 @@ class ScheduleTest extends TestCase
             ->assertJson(['success' => true]);
 
         $this->assertDatabaseHas('schedules', [
-            'id'   => $schedule->id,
+            'id' => $schedule->id,
             'title' => 'Updated Meeting',
         ]);
     }
@@ -120,11 +120,92 @@ class ScheduleTest extends TestCase
         $schedule = Schedule::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user, 'sanctum')
-            ->deleteJson('/api/v1/schedules/' . $schedule->id);
+            ->deleteJson('/api/v1/schedules/'.$schedule->id);
 
         $response->assertStatus(200)
             ->assertJson(['success' => true]);
 
         $this->assertSoftDeleted('schedules', ['id' => $schedule->id]);
+    }
+
+    public function test_store_rejects_end_before_start(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/schedules', [
+                'title' => 'Invalid',
+                'start_time' => '2026-10-28T15:00:00',
+                'end_time' => '2026-10-28T14:00:00',
+            ])
+            ->assertStatus(422);
+    }
+
+    public function test_update_rejects_start_after_existing_end(): void
+    {
+        $user = User::factory()->create();
+        $schedule = Schedule::factory()->create([
+            'user_id' => $user->id,
+            'start_time' => '2026-10-28 14:00:00',
+            'end_time' => '2026-10-28 15:00:00',
+        ]);
+
+        $this->actingAs($user, 'sanctum')
+            ->putJson('/api/v1/schedules/'.$schedule->id, [
+                'start_time' => '2026-10-28T16:00:00',
+            ])
+            ->assertStatus(422);
+    }
+
+    public function test_update_rejects_end_before_existing_start(): void
+    {
+        $user = User::factory()->create();
+        $schedule = Schedule::factory()->create([
+            'user_id' => $user->id,
+            'start_time' => '2026-10-28 14:00:00',
+            'end_time' => '2026-10-28 15:00:00',
+        ]);
+
+        $this->actingAs($user, 'sanctum')
+            ->putJson('/api/v1/schedules/'.$schedule->id, [
+                'end_time' => '2026-10-28T13:00:00',
+            ])
+            ->assertStatus(422);
+    }
+
+    public function test_update_accepts_valid_times(): void
+    {
+        $user = User::factory()->create();
+        $schedule = Schedule::factory()->create([
+            'user_id' => $user->id,
+            'start_time' => '2026-10-28 14:00:00',
+            'end_time' => '2026-10-28 15:00:00',
+        ]);
+
+        $this->actingAs($user, 'sanctum')
+            ->putJson('/api/v1/schedules/'.$schedule->id, [
+                'end_time' => '2026-10-28T16:00:00',
+            ])
+            ->assertStatus(200);
+    }
+
+    public function test_guest_cannot_access_schedules(): void
+    {
+        $this->getJson('/api/v1/schedules')->assertUnauthorized();
+    }
+
+    public function test_other_user_cannot_update_or_delete_schedule(): void
+    {
+        $owner = User::factory()->create();
+        $attacker = User::factory()->create();
+        $schedule = Schedule::factory()->create(['user_id' => $owner->id]);
+
+        $this->actingAs($attacker, 'sanctum')
+            ->putJson('/api/v1/schedules/'.$schedule->id, ['title' => 'Hacked'])
+            ->assertStatus(403);
+
+        $this->actingAs($attacker, 'sanctum')
+            ->deleteJson('/api/v1/schedules/'.$schedule->id)
+            ->assertStatus(403);
     }
 }

@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\API\v1;
 
+use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\v1\ScheduleResource;
-use App\Helpers\ApiResponse;
 use App\Models\Schedule;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 
 class ScheduleController extends Controller
@@ -14,8 +15,8 @@ class ScheduleController extends Controller
     public function index(Request $request)
     {
         $schedules = Schedule::where('user_id', $request->user()->id)
-            ->when($request->filled('start_time'), fn($q) => $q->whereDate('start_time', '>=', $request->start_time))
-            ->when($request->filled('end_time'), fn($q) => $q->whereDate('end_time', '<=', $request->end_time))
+            ->when($request->filled('start_time'), fn ($q) => $q->whereDate('start_time', '>=', $request->start_time))
+            ->when($request->filled('end_time'), fn ($q) => $q->whereDate('end_time', '<=', $request->end_time))
             ->latest()
             ->paginate(15);
 
@@ -25,16 +26,16 @@ class ScheduleController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'title'           => ['required', 'string', 'max:255'],
-            'description'     => ['nullable', 'string'],
-            'start_time'      => ['required', 'date'],
-            'end_time'        => ['required', 'date', 'after:start_time'],
-            'location'        => ['nullable', 'string', 'max:255'],
-            'is_all_day'      => ['sometimes', 'boolean'],
-            'recurring'       => ['sometimes', 'boolean'],
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'start_time' => ['required', 'date'],
+            'end_time' => ['required', 'date', 'after:start_time'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'is_all_day' => ['sometimes', 'boolean'],
+            'recurring' => ['sometimes', 'boolean'],
             'recurring_pattern' => ['sometimes', 'string', 'in:daily,weekly,monthly'],
-            'timezone'        => ['sometimes', 'string', 'max:50'],
-            'is_overnight'    => ['sometimes', 'boolean'],
+            'timezone' => ['sometimes', 'string', 'max:50'],
+            'is_overnight' => ['sometimes', 'boolean'],
         ]);
 
         if ($validator->fails()) {
@@ -54,6 +55,7 @@ class ScheduleController extends Controller
         if ($schedule->user_id !== $request->user()->id) {
             return ApiResponse::error('Forbidden', null, 403);
         }
+
         return ApiResponse::success(new ScheduleResource($schedule), 'Schedule retrieved');
     }
 
@@ -64,24 +66,43 @@ class ScheduleController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'title'           => ['sometimes', 'string', 'max:255'],
-            'description'     => ['sometimes', 'string'],
-            'start_time'      => ['sometimes', 'date'],
-            'end_time'        => ['sometimes', 'date', 'after:start_time'],
-            'location'        => ['sometimes', 'string', 'max:255'],
-            'is_all_day'      => ['sometimes', 'boolean'],
-            'recurring'       => ['sometimes', 'boolean'],
-            'recurring_pattern' => ['sometimes', 'string', 'in:daily,weekly,monthly'],
-            'timezone'        => ['sometimes', 'string', 'max:50'],
-            'is_overnight'    => ['sometimes', 'boolean'],
+            'title' => ['sometimes', 'string', 'max:255'],
+            'description' => ['sometimes', 'nullable', 'string'],
+            'start_time' => ['sometimes', 'date'],
+            'end_time' => ['sometimes', 'date'],
+            'location' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'is_all_day' => ['sometimes', 'boolean'],
+            'recurring' => ['sometimes', 'boolean'],
+            'recurring_pattern' => ['sometimes', 'nullable', 'string', 'in:daily,weekly,monthly'],
+            'timezone' => ['sometimes', 'string', 'max:50'],
+            'is_overnight' => ['sometimes', 'boolean'],
         ]);
+
+        $validator->after(function ($validator) use ($request, $schedule) {
+            if ($validator->errors()->has('start_time') || $validator->errors()->has('end_time')) {
+                return;
+            }
+
+            if (! $request->hasAny(['start_time', 'end_time'])) {
+                return;
+            }
+
+            $start = Carbon::parse($request->input('start_time', $schedule->start_time));
+            $end = Carbon::parse($request->input('end_time', $schedule->end_time));
+
+            if ($end->lessThanOrEqualTo($start)) {
+                $validator->errors()->add('end_time', 'The end time must be after the start time.');
+            }
+        });
 
         if ($validator->fails()) {
             return ApiResponse::error('Validation failed', $validator->errors()->toArray(), 422);
         }
 
-        $schedule->update($validator->validated());
-        return ApiResponse::success(new ScheduleResource($schedule), 'Schedule updated');
+        $data = $validator->validated();
+        $schedule->update($data);
+
+        return ApiResponse::success(new ScheduleResource($schedule->fresh()), 'Schedule updated');
     }
 
     public function destroy(Request $request, Schedule $schedule)
@@ -91,6 +112,7 @@ class ScheduleController extends Controller
         }
 
         $schedule->delete();
+
         return ApiResponse::success(null, 'Schedule deleted');
     }
 }
