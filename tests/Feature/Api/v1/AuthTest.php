@@ -5,6 +5,7 @@ namespace Tests\Feature\Api\v1;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 
 class AuthTest extends TestCase
 {
@@ -13,13 +14,13 @@ class AuthTest extends TestCase
     public function test_can_register_new_user(): void
     {
         $response = $this->postJson('/api/v1/auth/register', [
-            'name'                 => 'Test User',
-            'username'             => 'testuser',
-            'email'                => 'test@example.com',
-            'phone_number'         => '08123456789',
-            'password'             => 'password123',
+            'name' => 'Test User',
+            'username' => 'testuser',
+            'email' => 'test@example.com',
+            'phone_number' => '08123456789',
+            'password' => 'password123',
             'password_confirmation' => 'password123',
-            'role'                 => 'user',
+            'role' => 'user',
         ]);
 
         $response->assertStatus(201)
@@ -27,7 +28,7 @@ class AuthTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'username' => 'testuser',
-            'email'    => 'test@example.com',
+            'email' => 'test@example.com',
         ]);
     }
 
@@ -36,11 +37,11 @@ class AuthTest extends TestCase
         User::factory()->create(['email' => 'test@example.com']);
 
         $response = $this->postJson('/api/v1/auth/register', [
-            'name'                 => 'Test User',
-            'username'             => 'testuser2',
-            'email'                => 'test@example.com',
-            'phone_number'         => '08123456788',
-            'password'             => 'password123',
+            'name' => 'Test User',
+            'username' => 'testuser2',
+            'email' => 'test@example.com',
+            'phone_number' => '08123456788',
+            'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
 
@@ -53,14 +54,14 @@ class AuthTest extends TestCase
     {
         $user = User::factory()->create([
             'username' => 'testuser',
-            'email'    => 'test@example.com',
+            'email' => 'test@example.com',
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
             'identifier' => 'testuser',
-            'password'   => 'password123',
+            'password' => 'password123',
         ]);
 
         $response->assertStatus(200)
@@ -72,25 +73,24 @@ class AuthTest extends TestCase
     {
         $response = $this->postJson('/api/v1/auth/login', [
             'identifier' => 'nonexistent',
-            'password'   => 'wrongpassword',
+            'password' => 'wrongpassword',
         ]);
 
         $response->assertStatus(401);
     }
 
-
     public function test_cannot_login_inactive_account(): void
     {
         User::factory()->create([
             'username' => 'inactive',
-            'email'    => 'inactive@example.com',
+            'email' => 'inactive@example.com',
             'password' => bcrypt('password123'),
             'is_active' => false,
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
             'identifier' => 'inactive',
-            'password'   => 'password123',
+            'password' => 'password123',
         ]);
 
         $response->assertStatus(403);
@@ -127,5 +127,87 @@ class AuthTest extends TestCase
         $response->assertStatus(200)
             ->assertJson(['success' => true])
             ->assertJsonStructure(['success', 'data', 'message', 'error']);
+    }
+
+    public function test_account_locks_after_five_failed_logins(): void
+    {
+        $this->withoutMiddleware(ThrottleRequests::class);
+
+        $user = User::factory()->create([
+            'username' => 'budi',
+            'password' => 'correct-password',
+        ]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/v1/auth/login', [
+                'identifier' => 'budi',
+                'password' => 'wrong-password',
+            ])->assertUnauthorized();
+        }
+
+        $this->postJson('/api/v1/auth/login', [
+            'identifier' => 'budi',
+            'password' => 'correct-password',
+        ])->assertStatus(423);
+
+        $this->assertNotNull($user->fresh()->locked_until);
+    }
+
+    public function test_successful_login_resets_failed_attempts(): void
+    {
+        $this->withoutMiddleware(ThrottleRequests::class);
+
+        $user = User::factory()->create([
+            'username' => 'budi',
+            'password' => 'correct-password',
+        ]);
+
+        for ($i = 0; $i < 3; $i++) {
+            $this->postJson('/api/v1/auth/login', [
+                'identifier' => 'budi',
+                'password' => 'wrong-password',
+            ])->assertUnauthorized();
+        }
+
+        $this->postJson('/api/v1/auth/login', [
+            'identifier' => 'budi',
+            'password' => 'correct-password',
+        ])->assertOk();
+
+        $this->assertSame(0, $user->fresh()->failed_login_attempts);
+    }
+
+    public function test_login_by_name_is_rejected(): void
+    {
+        User::factory()->create([
+            'name' => 'Budi Santoso',
+            'username' => 'budi',
+            'password' => 'correct-password',
+        ]);
+
+        $this->postJson('/api/v1/auth/login', [
+            'identifier' => 'Budi Santoso',
+            'password' => 'correct-password',
+        ])->assertUnauthorized();
+    }
+
+    public function test_login_is_rate_limited(): void
+    {
+        User::factory()->create([
+            'username' => 'budi',
+            'password' => 'correct-password',
+        ]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/v1/auth/login', [
+                'identifier' => 'budi',
+                'password' => 'wrong-password',
+            ])->assertUnauthorized();
+        }
+
+        $this->postJson('/api/v1/auth/login', [
+            'identifier' => 'budi',
+            'password' => 'wrong-password',
+        ])->assertStatus(429);
     }
 }
