@@ -17,6 +17,13 @@ use App\Http\Controllers\API\v1\WorkShiftController;
 use App\Http\Controllers\API\v1\BlogController;
 use App\Http\Controllers\API\v1\ContactController;
 use App\Http\Controllers\API\v1\NotificationController;
+use App\Http\Controllers\API\v1\GoalController;
+use App\Http\Controllers\API\v1\DebtController;
+use App\Http\Controllers\API\v1\SubscriptionController;
+use App\Http\Controllers\API\v1\AccountController;
+use App\Http\Controllers\API\v1\BudgetController;
+use App\Http\Controllers\API\v1\SummaryController;
+
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -149,6 +156,59 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/{notification}', [NotificationController::class, 'show'])->name('show');
             Route::put('/{notification}', [NotificationController::class, 'update'])->name('update');
             Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+        });
+
+        // Goals
+        Route::prefix('goals')->name('goals.')->group(function () {
+            Route::get('/', [GoalController::class, 'index'])->name('index');
+            Route::post('/', [GoalController::class, 'store'])->name('store');
+            Route::get('/{goal}', [GoalController::class, 'show'])->name('show');
+            Route::put('/{goal}', [GoalController::class, 'update'])->name('update');
+            Route::delete('/{goal}', [GoalController::class, 'destroy'])->name('destroy');
+        });
+
+        // Debts
+        Route::prefix('debts')->name('debts.')->group(function () {
+            Route::get('/', [DebtController::class, 'index'])->name('index');
+            Route::post('/', [DebtController::class, 'store'])->name('store');
+            Route::get('/{debt}', [DebtController::class, 'show'])->name('show');
+            Route::put('/{debt}', [DebtController::class, 'update'])->name('update');
+            Route::delete('/{debt}', [DebtController::class, 'destroy'])->name('destroy');
+        });
+
+        // Subscriptions
+        Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
+            Route::get('/', [SubscriptionController::class, 'index'])->name('index');
+            Route::post('/', [SubscriptionController::class, 'store'])->name('store');
+            Route::get('/{subscription}', [SubscriptionController::class, 'show'])->name('show');
+            Route::put('/{subscription}', [SubscriptionController::class, 'update'])->name('update');
+            Route::delete('/{subscription}', [SubscriptionController::class, 'destroy'])->name('destroy');
+        });
+
+        // Accounts
+        Route::prefix('accounts')->name('accounts.')->group(function () {
+            Route::get('/', [AccountController::class, 'index'])->name('index');
+            Route::post('/', [AccountController::class, 'store'])->name('store');
+            Route::get('/{account}', [AccountController::class, 'show'])->name('show');
+            Route::put('/{account}', [AccountController::class, 'update'])->name('update');
+            Route::delete('/{account}', [AccountController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('budgets')->name('budgets.')->group(function () {
+            Route::get('/', [BudgetController::class, 'index'])->name('index');
+            Route::post('/', [BudgetController::class, 'store'])->name('store');
+            Route::get('/{budget}', [BudgetController::class, 'show'])->name('show');
+            Route::put('/{budget}', [BudgetController::class, 'update'])->name('update');
+            Route::delete('/{budget}', [BudgetController::class, 'destroy'])->name('destroy');
+        });
+
+        // Summaries
+        Route::prefix('summaries')->name('summaries.')->group(function () {
+            Route::get('/', [SummaryController::class, 'index'])->name('index');
+            Route::post('/', [SummaryController::class, 'store'])->name('store');
+            Route::get('/{summary}', [SummaryController::class, 'show'])->name('show');
+            Route::put('/{summary}', [SummaryController::class, 'update'])->name('update');
+            Route::delete('/{summary}', [SummaryController::class, 'destroy'])->name('destroy');
         });
     });
 

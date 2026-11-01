@@ -9,6 +9,6 @@ class FinanceTransactionSeeder extends Seeder
 {
     public function run(): void
     {
-        FinanceTransaction::factory()->count(10)->create();
+        FinanceTransaction::factory()->count(5)->create();
     }
 }

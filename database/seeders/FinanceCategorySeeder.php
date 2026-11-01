@@ -9,6 +9,6 @@ class FinanceCategorySeeder extends Seeder
 {
     public function run(): void
     {
-        FinanceCategory::factory()->count(10)->create();
+        FinanceCategory::factory()->count(5)->create();
     }
 }

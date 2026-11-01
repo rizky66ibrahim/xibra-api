@@ -9,6 +9,6 @@ class ReminderSeeder extends Seeder
 {
     public function run(): void
     {
-        Reminder::factory()->count(10)->create();
+        Reminder::factory()->count(5)->create();
     }
 }

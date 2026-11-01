@@ -9,6 +9,6 @@ class WorkShiftSeeder extends Seeder
 {
     public function run(): void
     {
-        WorkShift::factory()->count(10)->create();
+        WorkShift::factory()->count(5)->create();
     }
 }
