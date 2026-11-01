@@ -1,32 +1,29 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Helpers\ApiResponse;
+use App\Http\Controllers\API\v1\AccountController;
 use App\Http\Controllers\API\v1\AuthController;
-use App\Http\Controllers\API\v1\ProfileController;
-use App\Http\Controllers\API\v1\PortfolioController;
-use App\Http\Controllers\API\v1\SkillController;
-use App\Http\Controllers\API\v1\ProjectController;
-use App\Http\Controllers\API\v1\TaskController;
-use App\Http\Controllers\API\v1\ScheduleController;
-use App\Http\Controllers\API\v1\ReminderController;
+use App\Http\Controllers\API\v1\BlogController;
+use App\Http\Controllers\API\v1\BudgetController;
+use App\Http\Controllers\API\v1\ContactController;
+use App\Http\Controllers\API\v1\DebtController;
 use App\Http\Controllers\API\v1\FinanceCategoryController;
 use App\Http\Controllers\API\v1\FinanceTransactionController;
-use App\Http\Controllers\API\v1\WorkShiftController;
-use App\Http\Controllers\API\v1\BlogController;
-use App\Http\Controllers\API\v1\ContactController;
-use App\Http\Controllers\API\v1\NotificationController;
 use App\Http\Controllers\API\v1\GoalController;
-use App\Http\Controllers\API\v1\DebtController;
+use App\Http\Controllers\API\v1\NotificationController;
+use App\Http\Controllers\API\v1\PortfolioController;
+use App\Http\Controllers\API\v1\ProfileController;
+use App\Http\Controllers\API\v1\ProjectController;
+use App\Http\Controllers\API\v1\ReminderController;
+use App\Http\Controllers\API\v1\ScheduleController;
+use App\Http\Controllers\API\v1\SkillController;
 use App\Http\Controllers\API\v1\SubscriptionController;
-use App\Http\Controllers\API\v1\AccountController;
-use App\Http\Controllers\API\v1\BudgetController;
 use App\Http\Controllers\API\v1\SummaryController;
+use App\Http\Controllers\API\v1\TaskController;
 use App\Http\Controllers\API\v1\TelegramPairingController;
 use App\Http\Controllers\API\v1\TelegramPairingIntegrationController;
-
-
+use App\Http\Controllers\API\v1\WorkShiftController;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -41,8 +38,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     // Auth routes (no auth required)
     Route::prefix('auth')->name('auth.')->group(function () {
-        Route::post('/register', [AuthController::class, 'register'])->name('register');
-        Route::post('/login', [AuthController::class, 'login'])->name('login');
+        Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1')->name('register');
+        Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('login');
         Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot-password');
         Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('reset-password');
     });
@@ -222,18 +219,26 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::delete('/unlink', [TelegramPairingController::class, 'unlinkTelegram'])->name('unlink');
         });
 
-        // Telegram Pairing Integration (Bot Internal)
-        Route::prefix('integrations/telegram')->name('integrations.telegram.')->group(function () {
-            Route::post('/pair', [TelegramPairingIntegrationController::class, 'pair'])->name('pair');
+        // Contacts
+        Route::prefix('contacts')->name('contacts.')->group(function () {
+            Route::get('/', [ContactController::class, 'index'])->name('index');
+            Route::get('/{contact}', [ContactController::class, 'show'])->name('show');
+            Route::put('/{contact}', [ContactController::class, 'update'])->name('update');
+            Route::delete('/{contact}', [ContactController::class, 'destroy'])->name('destroy');
         });
     });
 
-    // Public routes (no auth) — Contacts
-    Route::prefix('contacts')->name('contacts.')->group(function () {
-        Route::post('/', [ContactController::class, 'store'])->name('store');
-        Route::get('/', [ContactController::class, 'index'])->name('index');
-        Route::get('/{contact}', [ContactController::class, 'show'])->name('show');
-        Route::put('/{contact}', [ContactController::class, 'update'])->name('update');
-        Route::delete('/{contact}', [ContactController::class, 'destroy'])->name('destroy');
-    });
+    // Contacts (Public, no auth required)
+    Route::post('/contacts', [ContactController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('contacts.store');
+
+    // Telegram Integration (Public)
+    Route::prefix('integrations/telegram')
+        ->name('integrations.telegram.')
+        ->middleware('throttle:10,1')
+        ->group(function () {
+            Route::post('/pair', [TelegramPairingIntegrationController::class, 'pair'])
+                ->name('pair');
+        });
 });

@@ -3,77 +3,74 @@
 namespace Tests\Feature\Api\v1;
 
 use App\Models\Contact;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class ContactTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_can_create_contact_without_auth(): void
+    public function test_guest_can_submit_contact_message(): void
     {
-        $response = $this->postJson('/api/v1/contacts', [
-            'name'    => 'Test User',
-            'email'   => 'test@example.com',
+        $this->postJson('/api/v1/contacts', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
             'subject' => 'Inquiry',
             'message' => 'Hello Xibra',
-        ]);
-
-        $response->assertStatus(201)
+        ])->assertCreated()
             ->assertJson(['success' => true]);
 
         $this->assertDatabaseHas('contacts', [
-            'email'   => 'test@example.com',
+            'email' => 'test@example.com',
             'subject' => 'Inquiry',
         ]);
     }
 
-    public function test_can_list_contacts_without_auth(): void
+    public function test_guest_cannot_list_contacts(): void
     {
         Contact::factory()->count(3)->create();
 
-        $response = $this->getJson('/api/v1/contacts');
-
-        $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+        $this->getJson('/api/v1/contacts')->assertUnauthorized();
     }
 
-    public function test_can_get_contact_without_auth(): void
+    public function test_guest_cannot_view_update_or_delete_contact(): void
     {
         $contact = Contact::factory()->create();
 
-        $response = $this->getJson('/api/v1/contacts/' . $contact->id);
-
-        $response->assertStatus(200)
-            ->assertJson(['success' => true])
-            ->assertJson(['data' => ['id' => $contact->id]]);
-    }
-
-    public function test_can_update_contact_without_auth(): void
-    {
-        $contact = Contact::factory()->create();
-
-        $response = $this->putJson('/api/v1/contacts/' . $contact->id, [
-            'status' => 'read',
-        ]);
-
-        $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+        $this->getJson("/api/v1/contacts/{$contact->id}")->assertUnauthorized();
+        $this->putJson("/api/v1/contacts/{$contact->id}", ['status' => 'read'])->assertUnauthorized();
+        $this->deleteJson("/api/v1/contacts/{$contact->id}")->assertUnauthorized();
 
         $this->assertDatabaseHas('contacts', [
-            'id'    => $contact->id,
-            'status' => 'read',
+            'id' => $contact->id,
+            'status' => $contact->status,
         ]);
     }
 
-    public function test_can_delete_contact_without_auth(): void
+    public function test_authenticated_user_can_list_contacts(): void
     {
+        Sanctum::actingAs(User::factory()->create());
+        Contact::factory()->count(3)->create();
+
+        $this->getJson('/api/v1/contacts')
+            ->assertOk()
+            ->assertJson(['success' => true]);
+    }
+
+    public function test_authenticated_user_can_update_and_delete_contact(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
         $contact = Contact::factory()->create();
 
-        $response = $this->deleteJson('/api/v1/contacts/' . $contact->id);
+        $this->putJson("/api/v1/contacts/{$contact->id}", ['status' => 'read'])
+            ->assertOk();
 
-        $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+        $this->assertDatabaseHas('contacts', ['id' => $contact->id, 'status' => 'read']);
+
+        $this->deleteJson("/api/v1/contacts/{$contact->id}")
+            ->assertOk();
 
         $this->assertDatabaseMissing('contacts', ['id' => $contact->id]);
     }

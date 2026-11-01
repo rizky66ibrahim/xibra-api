@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\API\v1;
 
+use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\v1\ContactResource;
-use App\Helpers\ApiResponse;
 use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -14,9 +14,9 @@ class ContactController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name'    => ['required', 'string', 'max:255'],
-            'email'   => ['required', 'string', 'email', 'max:255'],
-            'phone'   => ['nullable', 'string', 'max:20'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
             'subject' => ['required', 'string', 'max:255'],
             'message' => ['required', 'string'],
         ]);
@@ -32,8 +32,8 @@ class ContactController extends Controller
 
     public function index(Request $request)
     {
-        // Protected: only authenticated users can list contacts
         $contacts = Contact::latest()->paginate(15);
+
         return ApiResponse::success($contacts, 'Contacts retrieved');
     }
 
@@ -53,12 +53,14 @@ class ContactController extends Controller
         }
 
         $contact->update($validator->validated());
+
         return ApiResponse::success(new ContactResource($contact), 'Contact updated');
     }
 
     public function destroy(Request $request, Contact $contact)
     {
         $contact->delete();
+
         return ApiResponse::success(null, 'Contact deleted');
     }
 }
