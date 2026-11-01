@@ -4,51 +4,13 @@ namespace Tests\Feature\Api\v1;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_can_register_new_user(): void
-    {
-        $response = $this->postJson('/api/v1/auth/register', [
-            'name' => 'Test User',
-            'username' => 'testuser',
-            'email' => 'test@example.com',
-            'phone_number' => '08123456789',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-            'role' => 'user',
-        ]);
-
-        $response->assertStatus(201)
-            ->assertJsonStructure(['success', 'data', 'message', 'error']);
-
-        $this->assertDatabaseHas('users', [
-            'username' => 'testuser',
-            'email' => 'test@example.com',
-        ]);
-    }
-
-    public function test_cannot_register_with_duplicate_email(): void
-    {
-        User::factory()->create(['email' => 'test@example.com']);
-
-        $response = $this->postJson('/api/v1/auth/register', [
-            'name' => 'Test User',
-            'username' => 'testuser2',
-            'email' => 'test@example.com',
-            'phone_number' => '08123456788',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-        ]);
-
-        $response->assertStatus(422)
-            ->assertJson(['success' => false, 'message' => 'Validation failed'])
-            ->assertJsonStructure(['success', 'data', 'message', 'error']);
-    }
 
     public function test_can_login_with_username(): void
     {
@@ -211,7 +173,12 @@ class AuthTest extends TestCase
         ])->assertStatus(429);
     }
 
-    public function test_register_cannot_set_admin_role(): void
+    public function test_sanctum_token_expires_in_one_year(): void
+    {
+        $this->assertSame(60 * 24 * 365, config('sanctum.expiration'));
+    }
+
+    public function test_public_register_is_disabled(): void
     {
         $this->postJson('/api/v1/auth/register', [
             'name' => 'Attacker',
@@ -219,14 +186,8 @@ class AuthTest extends TestCase
             'email' => 'attacker@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'role' => 'admin',
-        ])->assertCreated();
+        ])->assertNotFound();
 
-        $this->assertDatabaseHas('users', ['username' => 'attacker', 'role' => 'user']);
-    }
-
-    public function test_sanctum_token_expires_in_one_year(): void
-    {
-        $this->assertSame(60 * 24 * 365, config('sanctum.expiration'));
+        $this->assertDatabaseMissing('users', ['username' => 'attacker']);
     }
 }
