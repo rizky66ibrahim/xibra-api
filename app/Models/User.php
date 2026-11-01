@@ -40,4 +40,19 @@ class User extends Authenticatable
             'failed_login_attempts' => 'integer',
         ];
     }
+
+    public function telegramAccount()
+    {
+        return $this->hasOne(TelegramAccount::class);
+    }
+
+    public function telegramPairingCodes()
+    {
+        return $this->hasMany(TelegramPairingCode::class);
+    }
+
+    public function hasLinkedTelegram(): bool
+    {
+        return $this->telegramAccount()->where('is_active', true)->exists();
+    }
 }

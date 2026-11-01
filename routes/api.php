@@ -23,6 +23,9 @@ use App\Http\Controllers\API\v1\SubscriptionController;
 use App\Http\Controllers\API\v1\AccountController;
 use App\Http\Controllers\API\v1\BudgetController;
 use App\Http\Controllers\API\v1\SummaryController;
+use App\Http\Controllers\API\v1\TelegramPairingController;
+use App\Http\Controllers\API\v1\TelegramPairingIntegrationController;
+
 
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
@@ -194,6 +197,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::delete('/{account}', [AccountController::class, 'destroy'])->name('destroy');
         });
 
+        // Budgets
         Route::prefix('budgets')->name('budgets.')->group(function () {
             Route::get('/', [BudgetController::class, 'index'])->name('index');
             Route::post('/', [BudgetController::class, 'store'])->name('store');
@@ -209,6 +213,18 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/{summary}', [SummaryController::class, 'show'])->name('show');
             Route::put('/{summary}', [SummaryController::class, 'update'])->name('update');
             Route::delete('/{summary}', [SummaryController::class, 'destroy'])->name('destroy');
+        });
+
+        // Telegram Pairing (Authenticated)
+        Route::prefix('auth/telegram')->name('auth.telegram.')->group(function () {
+            Route::post('/pairing-code', [TelegramPairingController::class, 'generatePairingCode'])->name('pairing-code');
+            Route::get('/status', [TelegramPairingController::class, 'pairingStatus'])->name('status');
+            Route::delete('/unlink', [TelegramPairingController::class, 'unlinkTelegram'])->name('unlink');
+        });
+
+        // Telegram Pairing Integration (Bot Internal)
+        Route::prefix('integrations/telegram')->name('integrations.telegram.')->group(function () {
+            Route::post('/pair', [TelegramPairingIntegrationController::class, 'pair'])->name('pair');
         });
     });
 

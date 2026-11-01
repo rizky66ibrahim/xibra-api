@@ -14,6 +14,10 @@ return [
     |
     */
 
+    'telegram' => [
+        'bot_secret' => env('TELEGRAM_BOT_SECRET'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
