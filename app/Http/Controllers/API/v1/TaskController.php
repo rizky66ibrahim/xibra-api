@@ -76,11 +76,13 @@ class TaskController extends Controller
             return ApiResponse::error('Validation failed', $validator->errors()->toArray(), 422);
         }
 
-        if ($request->boolean('is_completed') && !$task->is_completed) {
-            $validator->validated()['completed_at'] = now();
+        $data = $validator->validated();
+
+        if ($request->boolean('is_completed') && ! $task->is_completed) {
+            $data['completed_at'] = now();
         }
 
-        $task->update($validator->validated());
+        $task->update($data);
         return ApiResponse::success(new TaskResource($task), 'Task updated');
     }
 
