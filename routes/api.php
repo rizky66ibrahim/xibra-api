@@ -220,7 +220,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         });
 
         // Contacts
-        Route::prefix('contacts')->name('contacts.')->group(function () {
+        Route::prefix('contacts')->name('contacts.')->middleware('admin')->group(function () {
             Route::get('/', [ContactController::class, 'index'])->name('index');
             Route::get('/{contact}', [ContactController::class, 'show'])->name('show');
             Route::put('/{contact}', [ContactController::class, 'update'])->name('update');
