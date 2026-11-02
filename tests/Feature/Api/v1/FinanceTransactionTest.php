@@ -15,13 +15,13 @@ class FinanceTransactionTest extends TestCase
 
     public function test_can_list_finance_transactions(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
         FinanceTransaction::factory()->count(3)->create(['user_id' => $user->id]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/finance/transactions');
 
@@ -31,16 +31,16 @@ class FinanceTransactionTest extends TestCase
 
     public function test_can_create_finance_transaction(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $category = FinanceCategory::factory()->create([
+        $category = FinanceCategory::factory()->createOne([
             'user_id' => $user->id,
             'type'    => 'expense',
         ]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/finance/transactions', [
                 'type'                => 'expense',
@@ -62,13 +62,13 @@ class FinanceTransactionTest extends TestCase
 
     public function test_can_get_finance_transaction(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $transaction = FinanceTransaction::factory()->create(['user_id' => $user->id]);
-
+        $transaction = FinanceTransaction::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/finance/transactions/' . $transaction->id);
 
@@ -79,18 +79,19 @@ class FinanceTransactionTest extends TestCase
 
     public function test_cannot_access_other_user_finance_transaction(): void
     {
-        $owner = User::factory()->create([
+        $owner = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $attacker = User::factory()->create([
+        $attacker = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $transaction = FinanceTransaction::factory()->create(['user_id' => $owner->id]);
+        $transaction = FinanceTransaction::factory()->createOne(['user_id' => $owner->id]);
 
+        /** @var \App\Models\User $attacker */
         $response = $this->actingAs($attacker, 'sanctum')
             ->getJson('/api/v1/finance/transactions/' . $transaction->id);
 
@@ -99,13 +100,13 @@ class FinanceTransactionTest extends TestCase
 
     public function test_can_update_finance_transaction(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $transaction = FinanceTransaction::factory()->create(['user_id' => $user->id]);
-
+        $transaction = FinanceTransaction::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->putJson('/api/v1/finance/transactions/' . $transaction->id, [
                 'amount' => 1000000,
@@ -122,13 +123,13 @@ class FinanceTransactionTest extends TestCase
 
     public function test_can_delete_finance_transaction(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $transaction = FinanceTransaction::factory()->create(['user_id' => $user->id]);
-
+        $transaction = FinanceTransaction::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->deleteJson('/api/v1/finance/transactions/' . $transaction->id);
 
@@ -140,9 +141,9 @@ class FinanceTransactionTest extends TestCase
 
     public function test_cannot_use_another_users_finance_category(): void
     {
-        $user = User::factory()->create();
-        $other = User::factory()->create();
-        $foreignCategory = FinanceCategory::factory()->create(['user_id' => $other->id]);
+        $user = User::factory()->createOne();
+        $other = User::factory()->createOne();
+        $foreignCategory = FinanceCategory::factory()->createOne(['user_id' => $other->id]);
 
         Sanctum::actingAs($user);
 

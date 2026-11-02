@@ -13,13 +13,13 @@ class FinanceCategoryTest extends TestCase
 
     public function test_can_list_finance_categories(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
         FinanceCategory::factory()->count(3)->create(['user_id' => $user->id]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/finance/categories');
 
@@ -29,11 +29,11 @@ class FinanceCategoryTest extends TestCase
 
     public function test_can_create_finance_category(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/finance/categories', [
                 'name'  => 'Makanan',
@@ -51,13 +51,13 @@ class FinanceCategoryTest extends TestCase
 
     public function test_can_get_finance_category(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $category = FinanceCategory::factory()->create(['user_id' => $user->id]);
-
+        $category = FinanceCategory::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/finance/categories/' . $category->id);
 
@@ -68,18 +68,19 @@ class FinanceCategoryTest extends TestCase
 
     public function test_cannot_access_other_user_finance_category(): void
     {
-        $owner = User::factory()->create([
+        $owner = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $attacker = User::factory()->create([
+        $attacker = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $category = FinanceCategory::factory()->create(['user_id' => $owner->id]);
+        $category = FinanceCategory::factory()->createOne(['user_id' => $owner->id]);
 
+        /** @var \App\Models\User $attacker */
         $response = $this->actingAs($attacker, 'sanctum')
             ->getJson('/api/v1/finance/categories/' . $category->id);
 
@@ -88,13 +89,13 @@ class FinanceCategoryTest extends TestCase
 
     public function test_can_update_finance_category(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $category = FinanceCategory::factory()->create(['user_id' => $user->id]);
-
+        $category = FinanceCategory::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->putJson('/api/v1/finance/categories/' . $category->id, [
                 'name' => 'Makanan & Minuman',
@@ -111,13 +112,13 @@ class FinanceCategoryTest extends TestCase
 
     public function test_can_delete_finance_category(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $category = FinanceCategory::factory()->create(['user_id' => $user->id]);
-
+        $category = FinanceCategory::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->deleteJson('/api/v1/finance/categories/' . $category->id);
 

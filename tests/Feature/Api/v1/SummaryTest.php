@@ -13,13 +13,13 @@ class SummaryTest extends TestCase
 
     public function test_can_list_summaries(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
         Summary::factory()->count(3)->create(['user_id' => $user->id]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/summaries');
 
@@ -29,11 +29,11 @@ class SummaryTest extends TestCase
 
     public function test_can_create_summary(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/summaries', [
                 'period'      => 'monthly',
@@ -56,13 +56,13 @@ class SummaryTest extends TestCase
 
     public function test_can_get_summary(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $summary = Summary::factory()->create(['user_id' => $user->id]);
-
+        $summary = Summary::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/summaries/' . $summary->id);
 
@@ -73,18 +73,19 @@ class SummaryTest extends TestCase
 
     public function test_cannot_access_other_user_summary(): void
     {
-        $owner = User::factory()->create([
+        $owner = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $attacker = User::factory()->create([
+        $attacker = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $summary = Summary::factory()->create(['user_id' => $owner->id]);
+        $summary = Summary::factory()->createOne(['user_id' => $owner->id]);
 
+        /** @var \App\Models\User $attacker */
         $response = $this->actingAs($attacker, 'sanctum')
             ->getJson('/api/v1/summaries/' . $summary->id);
 
@@ -93,13 +94,13 @@ class SummaryTest extends TestCase
 
     public function test_can_update_summary(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $summary = Summary::factory()->create(['user_id' => $user->id]);
-
+        $summary = Summary::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->putJson('/api/v1/summaries/' . $summary->id, [
                 'net_worth' => 15000000,
@@ -116,13 +117,13 @@ class SummaryTest extends TestCase
 
     public function test_can_delete_summary(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $summary = Summary::factory()->create(['user_id' => $user->id]);
-
+        $summary = Summary::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->deleteJson('/api/v1/summaries/' . $summary->id);
 

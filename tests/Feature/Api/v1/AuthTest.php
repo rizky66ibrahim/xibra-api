@@ -14,7 +14,7 @@ class AuthTest extends TestCase
 
     public function test_can_login_with_username(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'username' => 'testuser',
             'email' => 'test@example.com',
             'password' => bcrypt('password123'),
@@ -43,7 +43,7 @@ class AuthTest extends TestCase
 
     public function test_cannot_login_inactive_account(): void
     {
-        User::factory()->create([
+        User::factory()->createOne([
             'username' => 'inactive',
             'email' => 'inactive@example.com',
             'password' => bcrypt('password123'),
@@ -60,7 +60,7 @@ class AuthTest extends TestCase
 
     public function test_can_logout(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
@@ -76,7 +76,7 @@ class AuthTest extends TestCase
 
     public function test_can_get_authenticated_user(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
@@ -95,7 +95,7 @@ class AuthTest extends TestCase
     {
         $this->withoutMiddleware(ThrottleRequests::class);
 
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'username' => 'budi',
             'password' => 'correct-password',
         ]);
@@ -119,7 +119,7 @@ class AuthTest extends TestCase
     {
         $this->withoutMiddleware(ThrottleRequests::class);
 
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'username' => 'budi',
             'password' => 'correct-password',
         ]);
@@ -141,7 +141,7 @@ class AuthTest extends TestCase
 
     public function test_login_by_name_is_rejected(): void
     {
-        User::factory()->create([
+        User::factory()->createOne([
             'name' => 'Budi Santoso',
             'username' => 'budi',
             'password' => 'correct-password',
@@ -155,7 +155,7 @@ class AuthTest extends TestCase
 
     public function test_login_is_rate_limited(): void
     {
-        User::factory()->create([
+        User::factory()->createOne([
             'username' => 'budi',
             'password' => 'correct-password',
         ]);

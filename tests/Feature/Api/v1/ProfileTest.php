@@ -13,11 +13,11 @@ class ProfileTest extends TestCase
 
     public function test_profile_not_found_when_not_created(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/profile');
 
@@ -26,11 +26,11 @@ class ProfileTest extends TestCase
 
     public function test_can_create_profile(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/profile', [
                 'bio'         => 'Software developer',
@@ -55,13 +55,13 @@ class ProfileTest extends TestCase
 
     public function test_cannot_create_duplicate_profile(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        Profile::factory()->create(['user_id' => $user->id]);
-
+        Profile::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/profile', [
                 'bio' => 'Another bio',
@@ -72,13 +72,13 @@ class ProfileTest extends TestCase
 
     public function test_can_get_profile(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $profile = Profile::factory()->create(['user_id' => $user->id]);
-
+        $profile = Profile::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/profile');
 
@@ -89,13 +89,13 @@ class ProfileTest extends TestCase
 
     public function test_can_update_profile(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $profile = Profile::factory()->create(['user_id' => $user->id]);
-
+        $profile = Profile::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->putJson('/api/v1/profile', [
                 'city' => 'Bandung',
@@ -112,13 +112,13 @@ class ProfileTest extends TestCase
 
     public function test_can_delete_profile(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $profile = Profile::factory()->create(['user_id' => $user->id]);
-
+        $profile = Profile::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->deleteJson('/api/v1/profile');
 

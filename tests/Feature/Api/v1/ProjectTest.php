@@ -13,13 +13,13 @@ class ProjectTest extends TestCase
 
     public function test_can_list_projects(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
         Project::factory()->count(3)->create(['user_id' => $user->id]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/projects');
 
@@ -29,11 +29,11 @@ class ProjectTest extends TestCase
 
     public function test_can_create_project(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/projects', [
                 'title'       => 'Xibra API',
@@ -53,13 +53,13 @@ class ProjectTest extends TestCase
 
     public function test_can_get_project(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $project = Project::factory()->create(['user_id' => $user->id]);
-
+        $project = Project::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/projects/' . $project->id);
 
@@ -70,17 +70,17 @@ class ProjectTest extends TestCase
 
     public function test_cannot_access_other_user_project(): void
     {
-        $owner = User::factory()->create([
+        $owner = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $attacker = User::factory()->create([
+        $attacker = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $project = Project::factory()->create(['user_id' => $owner->id]);
+        $project = Project::factory()->createOne(['user_id' => $owner->id]);
 
         $response = $this->actingAs($attacker, 'sanctum')
             ->getJson('/api/v1/projects/' . $project->id);
@@ -90,13 +90,13 @@ class ProjectTest extends TestCase
 
     public function test_can_update_project(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $project = Project::factory()->create(['user_id' => $user->id]);
-
+        $project = Project::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->putJson('/api/v1/projects/' . $project->id, [
                 'title' => 'Updated Project',
@@ -113,13 +113,13 @@ class ProjectTest extends TestCase
 
     public function test_can_delete_project(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $project = Project::factory()->create(['user_id' => $user->id]);
-
+        $project = Project::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->deleteJson('/api/v1/projects/' . $project->id);
 

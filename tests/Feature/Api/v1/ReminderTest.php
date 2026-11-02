@@ -13,13 +13,13 @@ class ReminderTest extends TestCase
 
     public function test_can_list_reminders(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
         Reminder::factory()->count(3)->create(['user_id' => $user->id]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/reminders');
 
@@ -29,11 +29,11 @@ class ReminderTest extends TestCase
 
     public function test_can_create_reminder(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/reminders', [
                 'title'       => 'Daily Standup',
@@ -51,13 +51,13 @@ class ReminderTest extends TestCase
 
     public function test_can_get_reminder(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $reminder = Reminder::factory()->create(['user_id' => $user->id]);
-
+        $reminder = Reminder::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/reminders/' . $reminder->id);
 
@@ -68,17 +68,17 @@ class ReminderTest extends TestCase
 
     public function test_cannot_access_other_user_reminder(): void
     {
-        $owner = User::factory()->create([
+        $owner = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $attacker = User::factory()->create([
+        $attacker = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $reminder = Reminder::factory()->create(['user_id' => $owner->id]);
+        $reminder = Reminder::factory()->createOne(['user_id' => $owner->id]);
 
         $response = $this->actingAs($attacker, 'sanctum')
             ->getJson('/api/v1/reminders/' . $reminder->id);
@@ -88,13 +88,13 @@ class ReminderTest extends TestCase
 
     public function test_can_update_reminder(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $reminder = Reminder::factory()->create(['user_id' => $user->id]);
-
+        $reminder = Reminder::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->putJson('/api/v1/reminders/' . $reminder->id, [
                 'is_sent' => true,
@@ -111,13 +111,13 @@ class ReminderTest extends TestCase
 
     public function test_can_delete_reminder(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $reminder = Reminder::factory()->create(['user_id' => $user->id]);
-
+        $reminder = Reminder::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->deleteJson('/api/v1/reminders/' . $reminder->id);
 

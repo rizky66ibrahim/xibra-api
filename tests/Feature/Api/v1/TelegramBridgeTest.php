@@ -24,7 +24,7 @@ class TelegramBridgeTest extends TestCase
 
     private function linkedUser(): User
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
         $user->forceFill(['is_active' => true])->save();
 
         TelegramAccount::create([
@@ -94,11 +94,11 @@ class TelegramBridgeTest extends TestCase
     public function test_lists_only_pending_tasks_of_linked_user(): void
     {
         $user = $this->linkedUser();
-        $other = User::factory()->create();
+        $other = User::factory()->createOne();
 
         Task::factory()->count(2)->create(['user_id' => $user->id, 'is_completed' => false]);
-        Task::factory()->create(['user_id' => $user->id, 'is_completed' => true]);
-        Task::factory()->create(['user_id' => $other->id, 'is_completed' => false]);
+        Task::factory()->createOne(['user_id' => $user->id, 'is_completed' => true]);
+        Task::factory()->createOne(['user_id' => $other->id, 'is_completed' => false]);
 
         $this->withHeaders($this->botHeaders())
             ->getJson('/api/v1/integrations/telegram/tasks')
@@ -134,7 +134,7 @@ class TelegramBridgeTest extends TestCase
     public function test_complete_marks_task_done(): void
     {
         $user = $this->linkedUser();
-        $task = Task::factory()->create(['user_id' => $user->id, 'is_completed' => false]);
+        $task = Task::factory()->createOne(['user_id' => $user->id, 'is_completed' => false]);
 
         $this->withHeaders($this->botHeaders())
             ->postJson("/api/v1/integrations/telegram/tasks/{$task->id}/complete")
@@ -149,8 +149,8 @@ class TelegramBridgeTest extends TestCase
     public function test_cannot_complete_other_users_task(): void
     {
         $this->linkedUser();
-        $other = User::factory()->create();
-        $task = Task::factory()->create(['user_id' => $other->id, 'is_completed' => false]);
+        $other = User::factory()->createOne();
+        $task = Task::factory()->createOne(['user_id' => $other->id, 'is_completed' => false]);
 
         $this->withHeaders($this->botHeaders())
             ->postJson("/api/v1/integrations/telegram/tasks/{$task->id}/complete")

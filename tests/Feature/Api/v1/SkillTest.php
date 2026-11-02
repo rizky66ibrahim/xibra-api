@@ -13,13 +13,13 @@ class SkillTest extends TestCase
 
     public function test_can_list_skills(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
         Skill::factory()->count(3)->create(['user_id' => $user->id]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/skills');
 
@@ -29,11 +29,11 @@ class SkillTest extends TestCase
 
     public function test_can_create_skill(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/skills', [
                 'name'               => 'PHP',
@@ -54,13 +54,13 @@ class SkillTest extends TestCase
 
     public function test_can_get_skill(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $skill = Skill::factory()->create(['user_id' => $user->id]);
-
+        $skill = Skill::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/skills/' . $skill->id);
 
@@ -71,17 +71,17 @@ class SkillTest extends TestCase
 
     public function test_cannot_access_other_user_skill(): void
     {
-        $owner = User::factory()->create([
+        $owner = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $attacker = User::factory()->create([
+        $attacker = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $skill = Skill::factory()->create(['user_id' => $owner->id]);
+        $skill = Skill::factory()->createOne(['user_id' => $owner->id]);
 
         $response = $this->actingAs($attacker, 'sanctum')
             ->getJson('/api/v1/skills/' . $skill->id);
@@ -91,13 +91,13 @@ class SkillTest extends TestCase
 
     public function test_can_update_skill(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $skill = Skill::factory()->create(['user_id' => $user->id]);
-
+        $skill = Skill::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->putJson('/api/v1/skills/' . $skill->id, [
                 'level' => 'expert',
@@ -114,13 +114,13 @@ class SkillTest extends TestCase
 
     public function test_can_delete_skill(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $skill = Skill::factory()->create(['user_id' => $user->id]);
-
+        $skill = Skill::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->deleteJson('/api/v1/skills/' . $skill->id);
 

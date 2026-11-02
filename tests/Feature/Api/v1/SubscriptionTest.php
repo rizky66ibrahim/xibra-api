@@ -13,13 +13,13 @@ class SubscriptionTest extends TestCase
 
     public function test_can_list_subscriptions(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
         Subscription::factory()->count(3)->create(['user_id' => $user->id]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/subscriptions');
 
@@ -29,11 +29,11 @@ class SubscriptionTest extends TestCase
 
     public function test_can_create_subscription(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/subscriptions', [
                 'name'          => 'Netflix',
@@ -55,13 +55,13 @@ class SubscriptionTest extends TestCase
 
     public function test_can_get_subscription(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $subscription = Subscription::factory()->create(['user_id' => $user->id]);
-
+        $subscription = Subscription::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/subscriptions/' . $subscription->id);
 
@@ -72,17 +72,17 @@ class SubscriptionTest extends TestCase
 
     public function test_cannot_access_other_user_subscription(): void
     {
-        $owner = User::factory()->create([
+        $owner = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $attacker = User::factory()->create([
+        $attacker = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $subscription = Subscription::factory()->create(['user_id' => $owner->id]);
+        $subscription = Subscription::factory()->createOne(['user_id' => $owner->id]);
 
         $response = $this->actingAs($attacker, 'sanctum')
             ->getJson('/api/v1/subscriptions/' . $subscription->id);
@@ -92,13 +92,13 @@ class SubscriptionTest extends TestCase
 
     public function test_can_update_subscription(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $subscription = Subscription::factory()->create(['user_id' => $user->id]);
-
+        $subscription = Subscription::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->putJson('/api/v1/subscriptions/' . $subscription->id, [
                 'status' => 'cancelled',
@@ -115,13 +115,13 @@ class SubscriptionTest extends TestCase
 
     public function test_can_delete_subscription(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $subscription = Subscription::factory()->create(['user_id' => $user->id]);
-
+        $subscription = Subscription::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->deleteJson('/api/v1/subscriptions/' . $subscription->id);
 

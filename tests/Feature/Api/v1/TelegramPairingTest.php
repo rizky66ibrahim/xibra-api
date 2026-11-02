@@ -39,7 +39,7 @@ class TelegramPairingTest extends TestCase
 
     public function test_bot_can_pair_with_secret_without_user_token(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
         $code = $this->codeFor($user);
 
         $this->pair($code, 111)->assertOk();
@@ -53,7 +53,7 @@ class TelegramPairingTest extends TestCase
 
     public function test_pairing_rejects_wrong_secret(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
         $code = $this->codeFor($user);
 
         $this->pair($code, 111, 'wrong-secret')->assertUnauthorized();
@@ -63,7 +63,7 @@ class TelegramPairingTest extends TestCase
 
     public function test_pairing_rejects_missing_secret(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
         $code = $this->codeFor($user);
 
         $this->pair($code, 111, null)->assertUnauthorized();
@@ -71,7 +71,7 @@ class TelegramPairingTest extends TestCase
 
     public function test_code_cannot_be_reused(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
         $code = $this->codeFor($user);
 
         $this->pair($code, 111)->assertOk();
@@ -80,7 +80,7 @@ class TelegramPairingTest extends TestCase
 
     public function test_expired_code_is_rejected(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
         $code = $this->codeFor($user);
 
         TelegramPairingCode::query()->update(['expires_at' => now()->subMinute()]);
@@ -90,8 +90,8 @@ class TelegramPairingTest extends TestCase
 
     public function test_conflict_does_not_burn_the_code(): void
     {
-        $userA = User::factory()->create();
-        $userB = User::factory()->create();
+        $userA = User::factory()->createOne();
+        $userB = User::factory()->createOne();
 
         $this->pair($this->codeFor($userA), 111)->assertOk();
 
@@ -108,7 +108,7 @@ class TelegramPairingTest extends TestCase
 
     public function test_deactivated_user_cannot_pair(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
         $user->forceFill(['is_active' => false])->save();
 
         $code = $this->codeFor($user);
@@ -120,7 +120,7 @@ class TelegramPairingTest extends TestCase
 
     public function test_deleted_user_cannot_pair(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
         $code = $this->codeFor($user);
 
         $user->delete();

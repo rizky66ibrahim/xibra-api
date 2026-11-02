@@ -13,13 +13,13 @@ class ScheduleTest extends TestCase
 
     public function test_can_list_schedules(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
         Schedule::factory()->count(3)->create(['user_id' => $user->id]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/schedules');
 
@@ -29,11 +29,11 @@ class ScheduleTest extends TestCase
 
     public function test_can_create_schedule(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
-
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/schedules', [
                 'title' => 'Weekly Meeting',
@@ -52,13 +52,13 @@ class ScheduleTest extends TestCase
 
     public function test_can_get_schedule(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $schedule = Schedule::factory()->create(['user_id' => $user->id]);
-
+        $schedule = Schedule::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/schedules/' . $schedule->id);
 
@@ -69,17 +69,17 @@ class ScheduleTest extends TestCase
 
     public function test_cannot_access_other_user_schedule(): void
     {
-        $owner = User::factory()->create([
+        $owner = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $attacker = User::factory()->create([
+        $attacker = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $schedule = Schedule::factory()->create(['user_id' => $owner->id]);
+        $schedule = Schedule::factory()->createOne(['user_id' => $owner->id]);
 
         $response = $this->actingAs($attacker, 'sanctum')
             ->getJson('/api/v1/schedules/' . $schedule->id);
@@ -89,13 +89,13 @@ class ScheduleTest extends TestCase
 
     public function test_can_update_schedule(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $schedule = Schedule::factory()->create(['user_id' => $user->id]);
-
+        $schedule = Schedule::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->putJson('/api/v1/schedules/' . $schedule->id, [
                 'title' => 'Updated Meeting',
@@ -112,13 +112,13 @@ class ScheduleTest extends TestCase
 
     public function test_can_delete_schedule(): void
     {
-        $user = User::factory()->create([
+        $user = User::factory()->createOne([
             'password' => bcrypt('password123'),
             'is_active' => true,
         ]);
 
-        $schedule = Schedule::factory()->create(['user_id' => $user->id]);
-
+        $schedule = Schedule::factory()->createOne(['user_id' => $user->id]);
+        /** @var \App\Models\User $user */
         $response = $this->actingAs($user, 'sanctum')
             ->deleteJson('/api/v1/schedules/' . $schedule->id);
 
@@ -130,7 +130,7 @@ class ScheduleTest extends TestCase
 
     public function test_store_rejects_end_before_start(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
 
         $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/schedules', [
@@ -143,8 +143,8 @@ class ScheduleTest extends TestCase
 
     public function test_update_rejects_start_after_existing_end(): void
     {
-        $user = User::factory()->create();
-        $schedule = Schedule::factory()->create([
+        $user = User::factory()->createOne();
+        $schedule = Schedule::factory()->createOne([
             'user_id' => $user->id,
             'start_time' => '2026-10-28 14:00:00',
             'end_time' => '2026-10-28 15:00:00',
@@ -159,8 +159,8 @@ class ScheduleTest extends TestCase
 
     public function test_update_rejects_end_before_existing_start(): void
     {
-        $user = User::factory()->create();
-        $schedule = Schedule::factory()->create([
+        $user = User::factory()->createOne();
+        $schedule = Schedule::factory()->createOne([
             'user_id' => $user->id,
             'start_time' => '2026-10-28 14:00:00',
             'end_time' => '2026-10-28 15:00:00',
@@ -175,8 +175,8 @@ class ScheduleTest extends TestCase
 
     public function test_update_accepts_valid_times(): void
     {
-        $user = User::factory()->create();
-        $schedule = Schedule::factory()->create([
+        $user = User::factory()->createOne();
+        $schedule = Schedule::factory()->createOne([
             'user_id' => $user->id,
             'start_time' => '2026-10-28 14:00:00',
             'end_time' => '2026-10-28 15:00:00',
@@ -196,9 +196,9 @@ class ScheduleTest extends TestCase
 
     public function test_other_user_cannot_update_or_delete_schedule(): void
     {
-        $owner = User::factory()->create();
-        $attacker = User::factory()->create();
-        $schedule = Schedule::factory()->create(['user_id' => $owner->id]);
+        $owner = User::factory()->createOne();
+        $attacker = User::factory()->createOne();
+        $schedule = Schedule::factory()->createOne(['user_id' => $owner->id]);
 
         $this->actingAs($attacker, 'sanctum')
             ->putJson('/api/v1/schedules/' . $schedule->id, ['title' => 'Hacked'])
@@ -216,7 +216,7 @@ class ScheduleTest extends TestCase
 
     public function test_input_without_offset_is_stored_as_wib(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne();
 
         $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/schedules', [

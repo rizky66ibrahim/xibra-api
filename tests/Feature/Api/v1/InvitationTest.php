@@ -14,7 +14,7 @@ class InvitationTest extends TestCase
 
     private function adminUser(): User
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->createOne();
         $admin->forceFill(['role' => 'admin', 'is_active' => true])->save();
 
         return $admin;
@@ -55,7 +55,7 @@ class InvitationTest extends TestCase
 
     public function test_non_admin_cannot_create_invitation(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->createOne());
 
         $this->postJson('/api/v1/admin/invitations', ['label' => 'Kakak'])
             ->assertForbidden();
@@ -113,7 +113,7 @@ class InvitationTest extends TestCase
 
     public function test_accept_rejects_duplicate_username(): void
     {
-        User::factory()->create(['username' => 'kakak']);
+        User::factory()->createOne(['username' => 'kakak']);
         $token = $this->createInvitation();
 
         $this->postJson("/api/v1/auth/invitations/{$token}/accept", $this->validAccept())
