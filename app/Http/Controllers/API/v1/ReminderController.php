@@ -75,11 +75,13 @@ class ReminderController extends Controller
             return ApiResponse::error('Validation failed', $validator->errors()->toArray(), 422);
         }
 
-        if ($request->boolean('is_sent') && !$reminder->is_sent) {
-            $validator->validated()['sent_at'] = now();
-        }
+        $data = $validator->validated();
 
-        $reminder->update($validator->validated());
+        if ($request->boolean('is_sent') && ! $reminder->is_sent) {
+            $data['sent_at'] = now();
+        }
+        $reminder->update($data);
+
         return ApiResponse::success(new ReminderResource($reminder), 'Reminder updated');
     }
 

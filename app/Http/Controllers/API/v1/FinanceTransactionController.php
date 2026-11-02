@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\v1\FinanceTransactionResource;
 use App\Helpers\ApiResponse;
 use App\Models\FinanceTransaction;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -32,7 +33,11 @@ class FinanceTransactionController extends Controller
             'description'         => ['nullable', 'string'],
             'transaction_date'    => ['required', 'date'],
             'reference_number'    => ['nullable', 'string', 'max:100'],
-            'finance_category_id' => ['sometimes', 'exists:finance_categories,id'],
+            'finance_category_id' => [
+                'sometimes',
+                'nullable',
+                Rule::exists('finance_categories', 'id')->where('user_id', $request->user()->id),
+            ],
         ]);
 
         if ($validator->fails()) {
@@ -68,7 +73,11 @@ class FinanceTransactionController extends Controller
             'description'         => ['sometimes', 'string'],
             'transaction_date'    => ['sometimes', 'date'],
             'reference_number'    => ['sometimes', 'string', 'max:100'],
-            'finance_category_id' => ['sometimes', 'exists:finance_categories,id'],
+            'finance_category_id' => [
+                'sometimes',
+                'nullable',
+                Rule::exists('finance_categories', 'id')->where('user_id', $request->user()->id),
+            ],
         ]);
 
         if ($validator->fails()) {
