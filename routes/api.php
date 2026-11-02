@@ -24,8 +24,11 @@ use App\Http\Controllers\API\v1\TaskController;
 use App\Http\Controllers\API\v1\TelegramPairingController;
 use App\Http\Controllers\API\v1\TelegramPairingIntegrationController;
 use App\Http\Controllers\API\v1\WorkShiftController;
-use App\Http\Controllers\API\v1\TelegramBridgeController;
 use App\Http\Controllers\API\v1\InvitationController;
+use App\Http\Controllers\API\v1\TelegramBridgeController;
+use App\Http\Controllers\API\v1\ScheduleBridgeController;
+use App\Http\Controllers\API\v1\ReminderBridgeController;
+use App\Http\Controllers\API\v1\ShiftBridgeController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -245,10 +248,19 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->middleware(['telegram.bot', 'throttle:60,1'])
         ->group(function () {
             Route::get('/me', [TelegramBridgeController::class, 'me'])->name('me');
+
             Route::get('/tasks', [TelegramBridgeController::class, 'tasks'])->name('tasks.index');
             Route::post('/tasks', [TelegramBridgeController::class, 'storeTask'])->name('tasks.store');
             Route::post('/tasks/{task}/complete', [TelegramBridgeController::class, 'completeTask'])
                 ->name('tasks.complete');
+
+            Route::get('/schedules', [ScheduleBridgeController::class, 'index'])->name('schedules.index');
+            Route::post('/schedules', [ScheduleBridgeController::class, 'store'])->name('schedules.store');
+
+            Route::get('/reminders', [ReminderBridgeController::class, 'index'])->name('reminders.index');
+            Route::post('/reminders', [ReminderBridgeController::class, 'store'])->name('reminders.store');
+
+            Route::get('/shifts', [ShiftBridgeController::class, 'index'])->name('shifts.index');
         });
 
     // Invitation routes (public, no auth required)
