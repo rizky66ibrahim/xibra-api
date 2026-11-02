@@ -7,6 +7,7 @@ use App\Models\FinanceTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Laravel\Sanctum\Sanctum;
 
 class FinanceTransactionTest extends TestCase
 {
@@ -135,5 +136,21 @@ class FinanceTransactionTest extends TestCase
             ->assertJson(['success' => true]);
 
         $this->assertSoftDeleted('finance_transactions', ['id' => $transaction->id]);
+    }
+
+    public function test_cannot_use_another_users_finance_category(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $foreignCategory = FinanceCategory::factory()->create(['user_id' => $other->id]);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/finance/transactions', [
+            'type' => 'expense',
+            'amount' => 10000,
+            'transaction_date' => now()->toDateString(),
+            'finance_category_id' => $foreignCategory->id,
+        ])->assertStatus(422);
     }
 }
