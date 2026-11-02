@@ -29,6 +29,7 @@ use App\Http\Controllers\API\v1\TelegramBridgeController;
 use App\Http\Controllers\API\v1\ScheduleBridgeController;
 use App\Http\Controllers\API\v1\ReminderBridgeController;
 use App\Http\Controllers\API\v1\ShiftBridgeController;
+use App\Http\Controllers\API\v1\ShiftPlanBridgeController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -261,6 +262,15 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/reminders', [ReminderBridgeController::class, 'store'])->name('reminders.store');
 
             Route::get('/shifts', [ShiftBridgeController::class, 'index'])->name('shifts.index');
+            Route::post('/shifts', [ShiftBridgeController::class, 'store'])->name('shifts.store');
+
+            Route::get('/shift-blocks/preview', [ShiftPlanBridgeController::class, 'previewBlock'])
+                ->name('shift-blocks.preview');
+            Route::post('/shift-blocks', [ShiftPlanBridgeController::class, 'storeBlock'])
+                ->name('shift-blocks.store');
+
+            Route::get('/standby', [ShiftPlanBridgeController::class, 'showStandby'])->name('standby.show');
+            Route::post('/standby', [ShiftPlanBridgeController::class, 'storeStandby'])->name('standby.store');
         });
 
     // Invitation routes (public, no auth required)
