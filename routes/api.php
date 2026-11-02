@@ -1,6 +1,7 @@
 <?php
 
 use App\Helpers\ApiResponse;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\v1\AccountController;
 use App\Http\Controllers\API\v1\AuthController;
 use App\Http\Controllers\API\v1\BlogController;
@@ -23,7 +24,8 @@ use App\Http\Controllers\API\v1\TaskController;
 use App\Http\Controllers\API\v1\TelegramPairingController;
 use App\Http\Controllers\API\v1\TelegramPairingIntegrationController;
 use App\Http\Controllers\API\v1\WorkShiftController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\v1\TelegramBridgeController;
+use App\Http\Controllers\API\v1\InvitationController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -232,13 +234,39 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->middleware('throttle:5,1')
         ->name('contacts.store');
 
-    // Telegram Pairing Integration (Bot Internal)
-    Route::prefix('integrations/telegram')->name('integrations.telegram.')->group(function () {
-        Route::post('/pair', [TelegramPairingIntegrationController::class, 'pair'])->name('pair');
-    });
-
-    // Bot Telegram: autentikasi dengan header X-Telegram-Bot-Secret, bukan token user
+    // Telegram Pairing (Public, no auth required)
     Route::post('/integrations/telegram/pair', [TelegramPairingIntegrationController::class, 'pair'])
         ->middleware('throttle:10,1')
         ->name('integrations.telegram.pair');
+
+    // Telegram Bridge (Protected, bot auth required)
+    Route::prefix('integrations/telegram')
+        ->name('integrations.telegram.')
+        ->middleware(['telegram.bot', 'throttle:60,1'])
+        ->group(function () {
+            Route::get('/me', [TelegramBridgeController::class, 'me'])->name('me');
+            Route::get('/tasks', [TelegramBridgeController::class, 'tasks'])->name('tasks.index');
+            Route::post('/tasks', [TelegramBridgeController::class, 'storeTask'])->name('tasks.store');
+            Route::post('/tasks/{task}/complete', [TelegramBridgeController::class, 'completeTask'])
+                ->name('tasks.complete');
+        });
+
+    // Invitation routes (public, no auth required)
+    Route::get('/auth/invitations/{token}', [InvitationController::class, 'show'])
+        ->middleware('throttle:20,1')
+        ->name('invitations.show');
+
+    Route::post('/auth/invitations/{token}/accept', [InvitationController::class, 'accept'])
+        ->middleware('throttle:5,1')
+        ->name('invitations.accept');
+
+    // Admin-only invitation management routes (auth required)
+    Route::middleware(['auth:sanctum', 'admin'])
+        ->prefix('admin/invitations')
+        ->name('admin.invitations.')
+        ->group(function () {
+            Route::get('/', [InvitationController::class, 'index'])->name('index');
+            Route::post('/', [InvitationController::class, 'store'])->name('store');
+            Route::delete('/{invitation}', [InvitationController::class, 'destroy'])->name('destroy');
+        });
 });

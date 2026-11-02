@@ -18,6 +18,10 @@ return [
         'bot_secret' => env('TELEGRAM_BOT_SECRET'),
     ],
 
+    'frontend' => [
+        'url' => env('FRONTEND_URL', 'http://localhost:3000'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
