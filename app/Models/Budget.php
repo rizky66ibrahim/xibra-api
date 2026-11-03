@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Budget extends Model
@@ -14,6 +15,7 @@ class Budget extends Model
         'user_id',
         'name',
         'category',
+        'finance_category_id',
         'amount',
         'period',
         'start_date',
@@ -23,15 +25,20 @@ class Budget extends Model
     ];
 
     protected $casts = [
-        'amount'       => 'decimal:2',
+        'amount' => 'decimal:2',
         'spent_amount' => 'decimal:2',
-        'start_date'   => 'date',
-        'end_date'     => 'date',
-        'is_active'    => 'boolean',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'is_active' => 'boolean',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function financeCategory(): BelongsTo
+    {
+        return $this->belongsTo(FinanceCategory::class, 'finance_category_id');
     }
 }

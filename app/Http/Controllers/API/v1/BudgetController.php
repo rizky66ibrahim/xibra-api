@@ -8,6 +8,7 @@ use App\Helpers\ApiResponse;
 use App\Models\Budget;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class BudgetController extends Controller
 {
@@ -32,6 +33,11 @@ class BudgetController extends Controller
             'start_date' => ['required', 'date'],
             'end_date'   => ['sometimes', 'date'],
             'is_active'  => ['sometimes', 'boolean'],
+            'finance_category_id' => [
+                'sometimes',
+                'nullable',
+                Rule::exists('finance_categories', 'id')->where('user_id', $request->user()->id),
+            ],
         ]);
 
         if ($validator->fails()) {
@@ -68,6 +74,11 @@ class BudgetController extends Controller
             'start_date' => ['sometimes', 'date'],
             'end_date'   => ['sometimes', 'date'],
             'is_active'  => ['sometimes', 'boolean'],
+            'finance_category_id' => [
+                'sometimes',
+                'nullable',
+                Rule::exists('finance_categories', 'id')->where('user_id', $request->user()->id),
+            ],
         ]);
 
         if ($validator->fails()) {

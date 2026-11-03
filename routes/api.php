@@ -31,6 +31,7 @@ use App\Http\Controllers\API\v1\ReminderBridgeController;
 use App\Http\Controllers\API\v1\ShiftBridgeController;
 use App\Http\Controllers\API\v1\ShiftPlanBridgeController;
 use App\Http\Controllers\API\v1\ReminderNotifyController;
+use App\Http\Controllers\API\v1\FinanceBridgeController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -272,6 +273,16 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
             Route::get('/standby', [ShiftPlanBridgeController::class, 'showStandby'])->name('standby.show');
             Route::post('/standby', [ShiftPlanBridgeController::class, 'storeStandby'])->name('standby.store');
+
+
+            Route::get('/finance/accounts', [FinanceBridgeController::class, 'accounts'])->name('finance.accounts.index');
+            Route::post('/finance/accounts', [FinanceBridgeController::class, 'storeAccount'])->name('finance.accounts.store');
+            Route::get('/finance/categories', [FinanceBridgeController::class, 'categories'])->name('finance.categories.index');
+            Route::get('/finance/summary', [FinanceBridgeController::class, 'summary'])->name('finance.summary');
+            Route::post('/finance/transactions', [FinanceBridgeController::class, 'storeTransaction'])->name('finance.transactions.store');
+            Route::get('/finance/budgets', [FinanceBridgeController::class, 'budgets'])->name('finance.budgets.index');
+            Route::get('/finance/goals', [FinanceBridgeController::class, 'goals'])->name('finance.goals.index');
+            Route::post('/finance/goals/{goal}/contributions', [FinanceBridgeController::class, 'contribute'])->name('finance.goals.contribute');
         });
 
     Route::prefix('integrations/telegram/reminders')

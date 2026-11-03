@@ -28,7 +28,7 @@ class AccountController extends Controller
             'name'     => ['required', 'string', 'max:255'],
             'type'     => ['required', 'string', 'in:cash,bank,ewallet'],
             'provider' => ['sometimes', 'string', 'max:100'],
-            'balance'  => ['sometimes', 'numeric', 'min:0'],
+            'balance'  => ['sometimes', 'numeric'],
             'currency' => ['sometimes', 'string', 'size:3'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
