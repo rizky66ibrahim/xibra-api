@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ReminderSync;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -30,6 +31,15 @@ class Task extends Model
         'completed_at' => 'datetime',
         'is_completed' => 'boolean',
     ];
+
+    // A task with a due date gets one reminder on that day. Completing or deleting it removes the reminder.
+    protected static function booted(): void
+    {
+        static::saved(fn (Task $task) => app(ReminderSync::class)->forTask($task));
+
+        static::deleted(fn (Task $task) => app(ReminderSync::class)
+            ->removeByPrefix("u{$task->user_id}:task:{$task->id}:"));
+    }
 
     public function user()
     {

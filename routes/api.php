@@ -32,6 +32,7 @@ use App\Http\Controllers\API\v1\ShiftBridgeController;
 use App\Http\Controllers\API\v1\ShiftPlanBridgeController;
 use App\Http\Controllers\API\v1\ReminderNotifyController;
 use App\Http\Controllers\API\v1\FinanceBridgeController;
+use App\Http\Controllers\API\v1\CheckinBridgeController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -292,6 +293,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/due', [ReminderNotifyController::class, 'due'])->name('due');
             Route::post('/{reminder}/sent', [ReminderNotifyController::class, 'markSent'])->name('sent');
         });
+
+    // Background job for the bot: secret only
+    Route::get('/integrations/telegram/checkins/due', [CheckinBridgeController::class, 'due'])
+        ->middleware(['telegram.secret', 'throttle:30,1'])
+        ->name('integrations.telegram.checkins.due');
 
     // Invitation routes (public, no auth required)
     Route::get('/auth/invitations/{token}', [InvitationController::class, 'show'])

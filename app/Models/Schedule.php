@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\ReminderSync;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Schedule extends Model
@@ -32,7 +34,16 @@ class Schedule extends Model
         'is_overnight' => 'boolean',
     ];
 
-    public function user()
+    // Keep automatic reminders in step with the schedule, for every way it is changed
+    protected static function booted(): void
+    {
+        static::saved(fn (Schedule $schedule) => app(ReminderSync::class)->forSchedule($schedule));
+
+        static::deleted(fn (Schedule $schedule) => app(ReminderSync::class)
+            ->removeByPrefix("u{$schedule->user_id}:schedule:{$schedule->id}:"));
+    }
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

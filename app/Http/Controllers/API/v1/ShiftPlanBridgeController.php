@@ -10,6 +10,7 @@ use App\Services\ShiftRotation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use RuntimeException;
+use App\Services\ReminderSync;
 
 class ShiftPlanBridgeController extends Controller
 {
@@ -61,6 +62,7 @@ class ShiftPlanBridgeController extends Controller
             'starts_on' => $preview['starts_on'],
         ]);
 
+        app(\App\Services\ReminderSync::class)->forShiftBlock($request->user()->id, $preview['starts_on']);
         return ApiResponse::created($preview, 'Shift block created');
     }
 
