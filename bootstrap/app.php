@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
             'telegram.bot' => \App\Http\Middleware\EnsureTelegramBot::class,
+            'telegram.secret' => \App\Http\Middleware\EnsureBotSecret::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

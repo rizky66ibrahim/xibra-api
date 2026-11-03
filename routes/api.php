@@ -30,6 +30,7 @@ use App\Http\Controllers\API\v1\ScheduleBridgeController;
 use App\Http\Controllers\API\v1\ReminderBridgeController;
 use App\Http\Controllers\API\v1\ShiftBridgeController;
 use App\Http\Controllers\API\v1\ShiftPlanBridgeController;
+use App\Http\Controllers\API\v1\ReminderNotifyController;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
@@ -271,6 +272,14 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
             Route::get('/standby', [ShiftPlanBridgeController::class, 'showStandby'])->name('standby.show');
             Route::post('/standby', [ShiftPlanBridgeController::class, 'storeStandby'])->name('standby.store');
+        });
+
+    Route::prefix('integrations/telegram/reminders')
+        ->name('integrations.telegram.reminders.')
+        ->middleware(['telegram.secret', 'throttle:120,1'])
+        ->group(function () {
+            Route::get('/due', [ReminderNotifyController::class, 'due'])->name('due');
+            Route::post('/{reminder}/sent', [ReminderNotifyController::class, 'markSent'])->name('sent');
         });
 
     // Invitation routes (public, no auth required)
