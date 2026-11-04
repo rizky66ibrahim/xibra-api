@@ -26,7 +26,7 @@ class AccountController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name'     => ['required', 'string', 'max:255'],
-            'type'     => ['required', 'string', 'in:cash,bank,ewallet'],
+            'type'     => ['required', 'string', 'in:cash,bank,ewallet,investment'],
             'provider' => ['sometimes', 'string', 'max:100'],
             'balance'  => ['sometimes', 'numeric'],
             'currency' => ['sometimes', 'string', 'size:3'],
@@ -61,7 +61,7 @@ class AccountController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name'     => ['sometimes', 'string', 'max:255'],
-            'type'     => ['sometimes', 'string', 'in:cash,bank,ewallet'],
+            'type'     => ['sometimes', 'string', 'in:cash,bank,ewallet,investment'],
             'provider' => ['sometimes', 'string', 'max:100'],
             'balance'  => ['sometimes', 'numeric', 'min:0'],
             'currency' => ['sometimes', 'string', 'size:3'],

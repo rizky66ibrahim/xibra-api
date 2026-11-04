@@ -118,10 +118,13 @@ class FinanceTransactionController extends Controller
             'description' => ['nullable', 'string', 'max:255'],
             'transaction_date' => [$required, 'date'],
             'reference_number' => ['nullable', 'string', 'max:100'],
+            // Transactions cannot be booked to investment accounts
             'account_id' => [
                 'sometimes',
                 'nullable',
-                Rule::exists('accounts', 'id')->where('user_id', $userId),
+                Rule::exists('accounts', 'id')
+                    ->where('user_id', $userId)
+                    ->where('type', '!=', 'investment'),
             ],
             'finance_category_id' => [
                 'sometimes',

@@ -31,34 +31,84 @@ class FinanceBridgeController extends Controller
             ->get();
 
         return ApiResponse::success(
-            $accounts->map(fn (Account $a) => $this->presentAccount($a))->values(),
+            $accounts->map(fn(Account $a) => $this->presentAccount($a))->values(),
             'Accounts retrieved'
         );
     }
 
     // POST /finance/accounts
+    // cash, bank, and ewallet hold money. investment holds units x unit_price, updated by hand.
     public function storeAccount(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'string', 'in:cash,bank,ewallet'],
+            'type' => ['required', 'string', 'in:cash,bank,ewallet,investment'],
             'provider' => ['sometimes', 'nullable', 'string', 'max:100'],
             // Negative balances are allowed, for example credit cards and overdrafts
             'balance' => ['sometimes', 'numeric'],
+            'asset_class' => ['required_if:type,investment', 'nullable', 'string', 'in:saham,emas,kripto,reksadana,lainnya'],
+            'units' => ['required_if:type,investment', 'nullable', 'numeric', 'gt:0'],
+            'unit_price' => ['required_if:type,investment', 'nullable', 'numeric', 'gt:0'],
         ]);
 
         if ($validator->fails()) {
             return ApiResponse::error('Validation failed', $validator->errors()->toArray(), 422);
         }
 
-        $account = Account::create(array_merge($validator->validated(), [
+        $data = $validator->validated();
+        $isInvestment = $data['type'] === Account::TYPE_INVESTMENT;
+
+        $account = Account::create([
             'user_id' => $request->user()->id,
-            'balance' => $request->input('balance', 0),
+            'name' => $data['name'],
+            'type' => $data['type'],
+            'provider' => $data['provider'] ?? null,
+            'asset_class' => $isInvestment ? $data['asset_class'] : null,
+            'units' => $isInvestment ? $data['units'] : null,
+            'unit_price' => $isInvestment ? $data['unit_price'] : null,
+            'price_updated_at' => $isInvestment ? now() : null,
+            'balance' => $isInvestment
+                ? round((float) $data['units'] * (float) $data['unit_price'], 2)
+                : (float) ($data['balance'] ?? 0),
             'currency' => 'IDR',
             'is_active' => true,
-        ]));
+        ]);
 
         return ApiResponse::created($this->presentAccount($account), 'Account created');
+    }
+
+    // POST /finance/accounts/{account}/price: the investment value is units x the price you enter
+    public function updatePrice(Request $request, Account $account)
+    {
+        if ($account->user_id !== $request->user()->id) {
+            return ApiResponse::error('Account not found', null, 404);
+        }
+
+        if (! $account->isInvestment()) {
+            return ApiResponse::error('Harga hanya bisa diperbarui untuk akun investasi.', null, 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'unit_price' => ['required', 'numeric', 'gt:0'],
+            'units' => ['sometimes', 'numeric', 'gt:0'],
+        ]);
+
+        if ($validator->fails()) {
+            return ApiResponse::error('Validation failed', $validator->errors()->toArray(), 422);
+        }
+
+        $data = $validator->validated();
+        $units = (float) ($data['units'] ?? $account->units);
+        $price = (float) $data['unit_price'];
+
+        $account->forceFill([
+            'units' => $units,
+            'unit_price' => $price,
+            'balance' => round($units * $price, 2),
+            'price_updated_at' => now(),
+        ])->save();
+
+        return ApiResponse::success($this->presentAccount($account->fresh()), 'Price updated');
     }
 
     // GET /finance/categories?type=expense|income
@@ -104,14 +154,25 @@ class FinanceBridgeController extends Controller
         $income = (float) ($totals['income'] ?? 0);
         $expense = (float) ($totals['expense'] ?? 0);
 
+        $cash = (float) Account::where('user_id', $userId)
+            ->where('is_active', true)
+            ->where('type', '!=', Account::TYPE_INVESTMENT)
+            ->sum('balance');
+
+        $investment = (float) Account::where('user_id', $userId)
+            ->where('is_active', true)
+            ->where('type', Account::TYPE_INVESTMENT)
+            ->sum('balance');
+
         return ApiResponse::success([
             'month' => $start->format('Y-m'),
             'income' => round($income, 2),
             'expense' => round($expense, 2),
             'net' => round($income - $expense, 2),
-            'total_balance' => round((float) Account::where('user_id', $userId)
-                ->where('is_active', true)
-                ->sum('balance'), 2),
+            'cash_balance' => round($cash, 2),
+            'investment_value' => round($investment, 2),
+            // Everything together (cash and bank plus investments)
+            'total_balance' => round($cash + $investment, 2),
         ], 'Finance summary retrieved');
     }
 
@@ -125,7 +186,13 @@ class FinanceBridgeController extends Controller
             'amount' => ['required', 'numeric', 'gt:0'],
             'description' => ['nullable', 'string', 'max:255'],
             'transaction_date' => ['sometimes', 'date'],
-            'account_id' => ['sometimes', 'nullable', Rule::exists('accounts', 'id')->where('user_id', $userId)],
+            'account_id' => [
+                'sometimes',
+                'nullable',
+                Rule::exists('accounts', 'id')
+                    ->where('user_id', $userId)
+                    ->where(fn($query) => $query->where('type', '<>', 'investment')),
+            ],
             'finance_category_id' => ['sometimes', 'nullable', Rule::exists('finance_categories', 'id')->where('user_id', $userId)],
         ]);
 
@@ -200,7 +267,7 @@ class FinanceBridgeController extends Controller
         $goals = Goal::where('user_id', $request->user()->id)->orderBy('id')->get();
 
         return ApiResponse::success(
-            $goals->map(fn (Goal $g) => $this->presentGoal($g))->values(),
+            $goals->map(fn(Goal $g) => $this->presentGoal($g))->values(),
             'Goals retrieved'
         );
     }
@@ -248,7 +315,11 @@ class FinanceBridgeController extends Controller
             'name' => $account->name,
             'type' => $account->type,
             'provider' => $account->provider,
+            'asset_class' => $account->asset_class,
             'balance' => (float) $account->balance,
+            'units' => $account->units !== null ? (float) $account->units : null,
+            'unit_price' => $account->unit_price !== null ? (float) $account->unit_price : null,
+            'price_updated_at' => $account->price_updated_at?->toIso8601String(),
             'currency' => $account->currency,
         ];
     }

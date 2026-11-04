@@ -51,7 +51,8 @@ class FinanceLedger
                 }
 
                 $account = Account::whereKey($accountId)->lockForUpdate()->first();
-                if (! $account) {
+                // Investment accounts change value only through price updates, never through transactions
+                if (! $account || $account->isInvestment()) {
                     continue;
                 }
 

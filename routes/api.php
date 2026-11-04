@@ -284,6 +284,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/finance/budgets', [FinanceBridgeController::class, 'budgets'])->name('finance.budgets.index');
             Route::get('/finance/goals', [FinanceBridgeController::class, 'goals'])->name('finance.goals.index');
             Route::post('/finance/goals/{goal}/contributions', [FinanceBridgeController::class, 'contribute'])->name('finance.goals.contribute');
+            Route::post('/finance/accounts/{account}/price', [FinanceBridgeController::class, 'updatePrice'])->name('finance.accounts.price');
         });
 
     Route::prefix('integrations/telegram/reminders')
